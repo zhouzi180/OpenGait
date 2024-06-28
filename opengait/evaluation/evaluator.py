@@ -5,7 +5,7 @@ from utils import get_msg_mgr, mkdir
 
 from .metric import mean_iou, cuda_dist, compute_ACC_mAP, evaluate_rank, evaluate_many
 from .re_rank import re_ranking
-from sklearn.metrics import confusion_matrix, accuracy_score
+
 
 def de_diag(acc, each_angle=False):
     # Exclude identical-view cases
@@ -75,16 +75,12 @@ def single_view_gallery_evaluation(feature, label, seq_type, view, dataset, metr
                                   'BG': ['H-scene2-bg-1', 'H-scene2-bg-2', 'L-scene2-bg-1', 'L-scene2-bg-2', 'H-scene3-bg-1', 'H-scene3-bg-2', 'L-scene3-bg-1', 'L-scene3-bg-2', 'H-scene3_s-bg-1', 'H-scene3_s-bg-2', 'L-scene3_s-bg-1', 'L-scene3_s-bg-2'],
                                   'CL': ['H-scene2-cl-1', 'H-scene2-cl-2', 'L-scene2-cl-1', 'L-scene2-cl-2', 'H-scene3-cl-1', 'H-scene3-cl-2', 'L-scene3-cl-1', 'L-scene3-cl-2', 'H-scene3_s-cl-1', 'H-scene3_s-cl-2', 'L-scene3_s-cl-1', 'L-scene3_s-cl-2']
                                   },
-                      'SUSTech1K': {'Normal': ['01-nm'], 'Bag': ['bg'], 'Clothing': ['cl'], 'Carrying':['cr'], 'Umberalla': ['ub'], 'Uniform': ['uf'], 'Occlusion': ['oc'],'Night': ['nt'], 'Overall': ['01','02','03','04']},
-                      'Scoliosis': {'Normal': ['positive', 'negative']}
+                      'SUSTech1K': {'Normal': ['01-nm'], 'Bag': ['bg'], 'Clothing': ['cl'], 'Carrying':['cr'], 'Umberalla': ['ub'], 'Uniform': ['uf'], 'Occlusion': ['oc'],'Night': ['nt'], 'Overall': ['01','02','03','04']}
                       }
     gallery_seq_dict = {'CASIA-B': ['nm-01', 'nm-02', 'nm-03', 'nm-04'],
                         'OUMVLP': ['01'],
                         'CASIA-E': ['H-scene1-nm-1', 'H-scene1-nm-2', 'L-scene1-nm-1', 'L-scene1-nm-2'],
-                        'SUSTech1K': ['00-nm'],
-                        'Scoliosis': ['positive', 'negative']
-                        }
-
+                        'SUSTech1K': ['00-nm'],}
     msg_mgr = get_msg_mgr()
     acc = {}
     view_list = sorted(np.unique(view))
@@ -418,46 +414,4 @@ def evaluate_CCPG(data, dataset, metric='euc'):
         msg_mgr.log_info('UP: {}'.format(de_diag(acc[1, :, :, i], True)))
         msg_mgr.log_info('DN: {}'.format(de_diag(acc[2, :, :, i], True)))
         msg_mgr.log_info('BG: {}'.format(de_diag(acc[3, :, :, i], True)))
-    return result_dict
-
-def evaluate_scoliosis(data, dataset, metric='euc'):
-    msg_mgr = get_msg_mgr()
-
-    feature, label, class_id, view = data['embeddings'], data['labels'], data['types'], data['views']
-
-    label = np.array(label)
-    class_id = np.array(class_id)
-
-    # Update class_id with integer labels based on status
-    class_id_int = np.array([1 if status == 'positive' else 2 if status == 'critical' else 0 for status in class_id])
-    print('class_id=', class_id_int)
-
-    features = np.array(feature)
-    c_id_int = np.argmax(features.mean(-1), axis=-1)
-    print('predicted_labels', c_id_int)
-
-    # Calculate sensitivity and specificity
-    cm = confusion_matrix(class_id_int, c_id_int, labels=[0, 1, 2])
-    FP = cm.sum(axis=0) - np.diag(cm)
-    FN = cm.sum(axis=1) - np.diag(cm)
-    TP = np.diag(cm)
-    TN = cm.sum() - (FP + FN + TP)
-
-    # Sensitivity, hit rate, recall, or true positive rate
-    TPR = TP / (TP + FN)
-    # Specificity or true negative rate
-    TNR = TN / (TN + FP)
-    accuracy = accuracy_score(class_id_int, c_id_int)
-
-    result_dict = {}
-    result_dict["scalar/test_accuracy/"] = accuracy
-    result_dict["scalar/test_sensitivity/"] = TPR
-    result_dict["scalar/test_specificity/"] = TNR
-
-    print(f"Accuracy: {accuracy * 100:.2f}%")
-    # Printing the sensitivity and specificity
-    for i, cls in enumerate(['Positive']):
-        print(f"{cls} Sensitivity (Recall): {TPR[i] * 100:.2f}%")
-        print(f"{cls} Specificity: {TNR[i] * 100:.2f}%")
-
     return result_dict
