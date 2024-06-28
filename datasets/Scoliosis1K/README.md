@@ -6,7 +6,7 @@ decompress these two file by following command:
 ```shell
 unzip -P password Scoliosis1K-pkl.zip   | xargs -n1 tar xzvf
 ```
-password should be obtained by signing [agreement](https://zhouzi180.github.io/Scoliosis1K/static/resources/Scoliosis1KAgreement.pdf) and sending to email (12331257@mail.sustech.edu.cn)
+password should be obtained by signing [agreement](https://zhouzi180.github.io/scoliosis1k/static/resources/Scoliosis1KAgreement.pdf) and sending to email (12331257@mail.sustech.edu.cn)
 
 Then you will get Scoliosis1K formatted as:
 ```
